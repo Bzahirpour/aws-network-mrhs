@@ -1,0 +1,50 @@
+name: Terraform Lint
+
+on:
+  workflow_call:
+    inputs:
+      tf_version:
+        description: Terraform version to use
+        type: string
+        default: '1.14.8'
+      tflint_version:
+        description: tflint version to use
+        type: string
+        default: 'v0.50.3'
+      working_directory:
+        description: Directory to run fmt check and tflint from (usually the infra/ root)
+        type: string
+        default: 'infra'
+
+jobs:
+  lint:
+    name: Lint and security scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ inputs.tf_version }}
+
+      - name: Terraform fmt check
+        working-directory: ${{ inputs.working_directory }}
+        run: terraform fmt -check -recursive
+
+      - uses: terraform-linters/setup-tflint@v4
+        with:
+          tflint_version: ${{ inputs.tflint_version }}
+
+      - name: tflint
+        working-directory: ${{ inputs.working_directory }}
+        env:
+          TFLINT_CONFIG_FILE: ${{ github.workspace }}/.tflint.hcl
+        run: |
+          tflint --init
+          tflint --recursive
+
+      - name: tfsec
+        uses: aquasecurity/tfsec-action@v1.0.3
+        with:
+          working_directory: ${{ inputs.working_directory }}
+          soft_fail: false

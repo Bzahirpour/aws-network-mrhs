@@ -1,0 +1,73 @@
+name: Terraform Apply
+
+on:
+  workflow_call:
+    inputs:
+      tf_version:
+        description: Terraform version to use
+        type: string
+        default: '1.14.8'
+      aws_region:
+        description: AWS region
+        type: string
+        default: 'us-east-1'
+      environment:
+        description: Environment label (dev, prod)
+        type: string
+        required: true
+      working_directory:
+        description: Path to the Terraform environment workspace
+        type: string
+        required: true
+      github_environment:
+        description: |
+          GitHub environment name — must match an environment configured in the
+          calling repo's settings. Used to enforce protection rules and the
+          prod approval gate.
+        type: string
+        required: true
+    secrets:
+      aws_role_arn:
+        description: IAM role ARN assumed via OIDC
+        required: true
+      tf_vars:
+        description: |
+          JSON object of Terraform variable values.
+          e.g. {"alarm_email":"you@example.com","other_var":"value"}
+          Each key becomes TF_VAR_<key> in the environment.
+        required: false
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  apply:
+    name: Apply (${{ inputs.environment }})
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.github_environment }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.aws_role_arn }}
+          aws-region: ${{ inputs.aws_region }}
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ inputs.tf_version }}
+
+      - name: Set Terraform variables
+        if: ${{ secrets.tf_vars != '' }}
+        env:
+          TF_VARS_JSON: ${{ secrets.tf_vars }}
+        run: |
+          echo "$TF_VARS_JSON" | \
+            jq -r 'to_entries[] | "TF_VAR_\(.key)=\(.value)"' >> "$GITHUB_ENV"
+
+      - name: Apply
+        working-directory: ${{ inputs.working_directory }}
+        run: |
+          terraform init
+          terraform apply -auto-approve -lock-timeout=120s

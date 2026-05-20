@@ -1,0 +1,73 @@
+name: Terraform
+
+# This is the caller workflow — copy it into each new project's
+# .github/workflows/terraform.yml and adjust the inputs as needed.
+# The reusable workflow logic lives in Bzahirpour/iac-pipeline-template.
+
+on:
+  pull_request:
+    paths:
+      - 'infra/**'
+      - '.github/workflows/terraform.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'infra/**'
+      - '.github/workflows/terraform.yml'
+
+jobs:
+  lint:
+    uses: Bzahirpour/iac-pipeline-template/.github/workflows/tf-lint.yml@main
+    with:
+      tf_version: '1.14.8'
+      working_directory: infra
+
+  plan-dev:
+    if: github.event_name == 'pull_request'
+    needs: lint
+    uses: Bzahirpour/iac-pipeline-template/.github/workflows/tf-plan.yml@main
+    with:
+      environment: dev
+      working_directory: infra/envs/dev
+      aws_region: us-east-1
+    secrets:
+      aws_role_arn: ${{ secrets.AWS_ROLE_ARN }}
+      tf_vars: ${{ secrets.TF_VARS }}
+
+  plan-prod:
+    if: github.event_name == 'pull_request'
+    needs: lint
+    uses: Bzahirpour/iac-pipeline-template/.github/workflows/tf-plan.yml@main
+    with:
+      environment: prod
+      working_directory: infra/envs/prod
+      aws_region: us-east-1
+    secrets:
+      aws_role_arn: ${{ secrets.AWS_ROLE_ARN }}
+      tf_vars: ${{ secrets.TF_VARS }}
+
+  apply-dev:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: lint
+    uses: Bzahirpour/iac-pipeline-template/.github/workflows/tf-apply.yml@main
+    with:
+      environment: dev
+      working_directory: infra/envs/dev
+      github_environment: dev
+      aws_region: us-east-1
+    secrets:
+      aws_role_arn: ${{ secrets.AWS_ROLE_ARN }}
+      tf_vars: ${{ secrets.TF_VARS }}
+
+  apply-prod:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: apply-dev
+    uses: Bzahirpour/iac-pipeline-template/.github/workflows/tf-apply.yml@main
+    with:
+      environment: prod
+      working_directory: infra/envs/prod
+      github_environment: prod
+      aws_region: us-east-1
+    secrets:
+      aws_role_arn: ${{ secrets.AWS_ROLE_ARN }}
+      tf_vars: ${{ secrets.TF_VARS }}

@@ -1,0 +1,42 @@
+# Terraform
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+*.tfstate.backup
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Plan files (binary, large, not for git)
+*.tfplan
+
+# Auto-loaded tfvars (committed env tfvars are fine; auto.tfvars is for local overrides)
+*.auto.tfvars
+*.auto.tfvars.json
+
+# Lambda packaging artifacts
+lambda/*.zip
+lambda/build/
+lambda/__pycache__/
+lambda/.venv/
+**/*.pyc
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Secrets / env files
+.env
+.env.*
+*.pem
+*.key
+*.pub
