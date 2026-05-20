@@ -28,7 +28,7 @@ jobs:
     uses: Bzahirpour/iac-pipeline-template/.github/workflows/tf-plan.yml@main
     with:
       environment: dev
-      working_directory: infra/envs/dev
+      working_directory: infra/envs/dev/primary
       aws_region: us-east-1
     secrets:
       aws_role_arn: ${{ secrets.AWS_ROLE_ARN }}
@@ -40,7 +40,7 @@ jobs:
     uses: Bzahirpour/iac-pipeline-template/.github/workflows/tf-plan.yml@main
     with:
       environment: prod
-      working_directory: infra/envs/prod
+      working_directory: infra/envs/prod/primary
       aws_region: us-east-1
     secrets:
       aws_role_arn: ${{ secrets.AWS_ROLE_ARN }}
@@ -52,7 +52,7 @@ jobs:
     uses: Bzahirpour/iac-pipeline-template/.github/workflows/tf-apply.yml@main
     with:
       environment: dev
-      working_directory: infra/envs/dev
+      working_directory: infra/envs/dev/primary
       github_environment: dev
       aws_region: us-east-1
     secrets:
@@ -65,7 +65,7 @@ jobs:
     uses: Bzahirpour/iac-pipeline-template/.github/workflows/tf-apply.yml@main
     with:
       environment: prod
-      working_directory: infra/envs/prod
+      working_directory: infra/envs/prod/primary
       github_environment: prod
       aws_region: us-east-1
     secrets:
