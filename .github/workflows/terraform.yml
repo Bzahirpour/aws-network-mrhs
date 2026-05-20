@@ -10,7 +10,7 @@ on:
       - 'infra/**'
       - '.github/workflows/terraform.yml'
   push:
-    branches: [main]
+    branches: [master]
     paths:
       - 'infra/**'
       - '.github/workflows/terraform.yml'
@@ -32,7 +32,6 @@ jobs:
       aws_region: us-east-1
     secrets:
       aws_role_arn: ${{ secrets.AWS_ROLE_ARN }}
-      tf_vars: ${{ secrets.TF_VARS }}
 
   plan-prod:
     if: github.event_name == 'pull_request'
@@ -44,10 +43,9 @@ jobs:
       aws_region: us-east-1
     secrets:
       aws_role_arn: ${{ secrets.AWS_ROLE_ARN }}
-      tf_vars: ${{ secrets.TF_VARS }}
 
   apply-dev:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     needs: lint
     uses: Bzahirpour/iac-pipeline-template/.github/workflows/tf-apply.yml@main
     with:
@@ -57,10 +55,9 @@ jobs:
       aws_region: us-east-1
     secrets:
       aws_role_arn: ${{ secrets.AWS_ROLE_ARN }}
-      tf_vars: ${{ secrets.TF_VARS }}
 
   apply-prod:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     needs: apply-dev
     uses: Bzahirpour/iac-pipeline-template/.github/workflows/tf-apply.yml@main
     with:
@@ -70,4 +67,3 @@ jobs:
       aws_region: us-east-1
     secrets:
       aws_role_arn: ${{ secrets.AWS_ROLE_ARN }}
-      tf_vars: ${{ secrets.TF_VARS }}
