@@ -42,3 +42,8 @@ output "tgw_route_table_ids" {
   description = "Map of AZ name to TGW subnet route table ID"
   value       = { for az, rt in aws_route_table.tgw : az => rt.id }
 }
+
+output "nat_gateway_route_table_id" {
+  description = "Route table ID auto-created by AWS for the Regional NAT Gateway (null if NAT GW disabled)"
+  value       = length(aws_nat_gateway.this) > 0 ? aws_nat_gateway.this[0].route_table_id : null
+}
