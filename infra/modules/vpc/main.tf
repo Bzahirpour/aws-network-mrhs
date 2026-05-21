@@ -32,6 +32,15 @@ locals {
 
 # ── VPC ───────────────────────────────────────────────────────────────────────
 
+resource "aws_default_route_table" "main" {
+  default_route_table_id = aws_vpc.this.default_route_table_id
+
+  tags = merge(var.tags, {
+    Name   = "${var.name}-rt-main"
+    Module = "vpc"
+  })
+}
+
 resource "aws_vpc" "this" {
   cidr_block           = var.cidr
   enable_dns_hostnames = true
@@ -186,6 +195,13 @@ resource "aws_nat_gateway" "this" {
   })
 
   depends_on = [aws_internet_gateway.this]
+}
+
+resource "aws_ec2_tag" "nat_gw_rt_name" {
+  count       = var.enable_nat_gateway ? 1 : 0
+  resource_id = aws_nat_gateway.this[0].route_table_id
+  key         = "Name"
+  value       = "${var.name}-rt-nat-gw"
 }
 
 # ── VPC Flow Logs → CloudWatch ────────────────────────────────────────────────
