@@ -1,0 +1,13 @@
+# .checkov.yaml — project-level Checkov configuration.
+#
+# skip-check entries suppress checks that represent intentional architecture
+# decisions, not vulnerabilities. Each entry must have a comment explaining why.
+
+skip-check:
+  # CloudWatch log groups for VPC flow logs use AWS-managed encryption.
+  # CMK is not required for network telemetry at this classification level.
+  - CKV_AWS_158
+
+  # Flow log retention is set to 7 days by design (cost control for dev/test).
+  # Increase retention_in_days in the vpc module if compliance requires 365+.
+  - CKV_AWS_338

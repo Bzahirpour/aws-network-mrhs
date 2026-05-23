@@ -1,0 +1,23 @@
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    groups:
+      actions:
+        patterns:
+          - "*"
+
+  - package-ecosystem: terraform
+    directory: /infra/envs/dev/primary
+    schedule:
+      interval: weekly
+      day: monday
+
+  - package-ecosystem: terraform
+    directory: /infra/envs/prod/primary
+    schedule:
+      interval: weekly
+      day: monday
