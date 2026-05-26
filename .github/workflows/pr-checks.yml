@@ -151,7 +151,7 @@ jobs:
         if: always()
         with:
           name: tfplan-${{ matrix.env }}
-          path: plan-output/
+          path: ${{ github.workspace }}/plan-output/
 
   # ── 4. Security scan ──────────────────────────────────────────────────────
   scan:
@@ -176,39 +176,22 @@ jobs:
           name: tfplan-${{ matrix.env }}
           path: plan-output/
 
-      # ── Trivy: SARIF + explicit gate ──────────────────────────────────────
-      - name: Trivy SARIF scan
-        uses: aquasecurity/trivy-action@76071ef0d7ec797419534a183b498b4d6366cf37  # v0.31.0
+      # ── Trivy: SARIF (gating — exit 1 on HIGH/CRITICAL) ───────────────────
+      - name: Trivy SARIF scan (gating)
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25  # v0.36.0
         with:
           scan-type: config
           scan-ref: plan-output/plan.json
-          exit-code: '0'
+          exit-code: '1'
           severity: ${{ env.SEVERITY_THRESHOLD }}
           format: sarif
           output: trivy-${{ matrix.env }}.sarif
           trivyignores: .trivyignore
 
-      - name: Verify Trivy SARIF generated
-        run: |
-          if [ ! -f "trivy-${{ matrix.env }}.sarif" ]; then
-            echo "::error::Trivy SARIF file not generated — Trivy scan errored. See logs above."
-            exit 1
-          fi
-
-      - name: Trivy gate (fail on HIGH/CRITICAL findings)
-        run: |
-          count=$(jq -r '[.runs[].results[]] | length' trivy-${{ matrix.env }}.sarif)
-          if [ "$count" -gt 0 ]; then
-            echo "::error::Trivy found ${count} HIGH/CRITICAL findings:"
-            jq -r '.runs[].results[] | "  " + .ruleId + ": " + (.message.text // "no description")' trivy-${{ matrix.env }}.sarif
-            exit 1
-          fi
-          echo "✓ No HIGH/CRITICAL Trivy findings"
-
       # ── Trivy: table (non-gating — written to file for PR comment) ─────────
       - name: Trivy table summary (non-gating)
         if: always()
-        uses: aquasecurity/trivy-action@76071ef0d7ec797419534a183b498b4d6366cf37  # v0.31.0
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25  # v0.36.0
         with:
           scan-type: config
           scan-ref: plan-output/plan.json
