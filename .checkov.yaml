@@ -1,13 +1,24 @@
 # .checkov.yaml — project-level Checkov configuration.
 #
-# skip-check entries suppress checks that represent intentional architecture
-# decisions, not vulnerabilities. Each entry must have a comment explaining why.
+# Add skip-check entries REACTIVELY — only after Checkov flags a finding in CI,
+# you've read the rule on https://www.checkov.io/5.Policy%20Index/terraform.html,
+# and you've made a documented decision that the finding doesn't apply.
+#
+# Format:
+#   skip-check:
+#     - CKV_AWS_NNN  # short reason; full reason in commit message
 
 skip-check:
-  # CloudWatch log groups for VPC flow logs use AWS-managed encryption.
-  # CMK is not required for network telemetry at this classification level.
+  # CKV_AWS_158: CloudWatch log groups for VPC flow logs use AWS-managed encryption.
+  # CMK not required for network telemetry at this classification level. (review: 2027-05-22)
   - CKV_AWS_158
 
-  # Flow log retention is set to 7 days by design (cost control for dev/test).
-  # Increase retention_in_days in the vpc module if compliance requires 365+.
+  # CKV_AWS_338: Flow log retention is 7 days by design (cost control for dev/test).
+  # (review: 2026-11-22)
   - CKV_AWS_338
+
+  # CKV2_AWS_19: aws_eip.nat EIPs are allocated to aws_nat_gateway.this via
+  # availability_zone_address.allocation_ids. Checkov doesn't trace this indirect
+  # association path and flags them as unattached. They are not orphans.
+  # (review: 2026-08-22)
+  - CKV2_AWS_19

@@ -43,6 +43,15 @@ resource "aws_vpc" "this" {
   })
 }
 
+resource "aws_default_security_group" "this" {
+  vpc_id = aws_vpc.this.id
+
+  tags = merge(var.tags, {
+    Name   = "${var.name}-default-sg"
+    Module = "vpc"
+  })
+}
+
 # ── Internet Gateway ──────────────────────────────────────────────────────────
 
 resource "aws_internet_gateway" "this" {
@@ -232,7 +241,10 @@ data "aws_iam_policy_document" "flow_logs_policy" {
       "logs:DescribeLogGroups",
       "logs:DescribeLogStreams",
     ]
-    resources = ["*"]
+    resources = [
+      aws_cloudwatch_log_group.flow_logs.arn,
+      "${aws_cloudwatch_log_group.flow_logs.arn}:*",
+    ]
   }
 }
 
