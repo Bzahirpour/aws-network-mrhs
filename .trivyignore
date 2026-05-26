@@ -1,0 +1,14 @@
+# .trivyignore — suppress findings that reflect intentional architecture decisions.
+#
+# Format: one AVD-* or CVE-* ID per line, optionally followed by an expiry date:
+#   AVD-AWS-0017 exp:2027-01-01
+#
+# ── CloudWatch ────────────────────────────────────────────────────────────────
+# Flow log groups use AWS-managed encryption. CMK adds cost and operational
+# overhead without meaningful security improvement for network telemetry.
+AVD-AWS-0017
+
+# ── VPC ───────────────────────────────────────────────────────────────────────
+# Default security group restrictions are enforced at the resource level.
+# The default SG is tagged and managed via aws_default_security_group if needed.
+AVD-AWS-0178

@@ -1,0 +1,434 @@
+# .github/workflows/pr-checks.yml
+name: PR checks
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'infra/**'
+      - '.github/workflows/pr-checks.yml'
+      - '.checkov.yaml'
+      - '.trivyignore'
+      - '.tflint.hcl'
+
+concurrency:
+  group: pr-checks-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+env:
+  TF_VERSION: "1.14.8"
+  TFLINT_VERSION: "v0.50.3"
+  AWS_REGION: us-east-1
+  AWS_ROLE_ARN: arn:aws:iam::453624448159:role/mrhs-github-actions
+  SEVERITY_THRESHOLD: HIGH,CRITICAL
+  TF_PLUGIN_CACHE_DIR: ~/.terraform.d/plugin-cache
+
+jobs:
+  # ── 1. Lint ────────────────────────────────────────────────────────────────
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd  # v3.1.2
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: terraform fmt -check
+        working-directory: infra
+        run: terraform fmt -check -recursive
+
+      - uses: terraform-linters/setup-tflint@90f302c255ef959cbfb4bd10581afecdb7ece3e6  # v4.1.1
+        with:
+          tflint_version: ${{ env.TFLINT_VERSION }}
+
+      - uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684  # v4.2.3
+        with:
+          path: ~/.tflint.d/plugins
+          key: tflint-plugins-${{ hashFiles('.tflint.hcl') }}
+
+      - name: tflint
+        working-directory: infra
+        env:
+          TFLINT_CONFIG_FILE: ${{ github.workspace }}/.tflint.hcl
+        run: |
+          tflint --init
+          tflint --recursive
+
+  # ── 2. Validate ───────────────────────────────────────────────────────────
+  validate:
+    name: Validate (${{ matrix.env }})
+    runs-on: ubuntu-latest
+    needs: lint
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        env: [dev, prod]
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd  # v3.1.2
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Create plugin cache dir
+        run: mkdir -p "$TF_PLUGIN_CACHE_DIR"
+
+      - uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684  # v4.2.3
+        with:
+          path: ~/.terraform.d/plugin-cache
+          key: tf-providers-${{ matrix.env }}-${{ hashFiles(format('infra/envs/{0}/primary/.terraform.lock.hcl', matrix.env)) }}
+          restore-keys: tf-providers-${{ matrix.env }}-
+
+      - name: terraform init (backend=false)
+        working-directory: infra/envs/${{ matrix.env }}/primary
+        run: terraform init -backend=false
+
+      - name: terraform validate
+        working-directory: infra/envs/${{ matrix.env }}/primary
+        run: terraform validate
+
+  # ── 3. Plan ───────────────────────────────────────────────────────────────
+  plan:
+    name: Plan (${{ matrix.env }})
+    runs-on: ubuntu-latest
+    needs: validate
+    permissions:
+      contents: read
+      id-token: write
+    strategy:
+      fail-fast: false
+      matrix:
+        env: [dev, prod]
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - uses: aws-actions/configure-aws-credentials@e3dd6a429d7300a6a4c196c26e071d42e0343502  # v4.0.2
+        with:
+          role-to-assume: ${{ env.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd  # v3.1.2
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Create plugin cache dir
+        run: mkdir -p "$TF_PLUGIN_CACHE_DIR"
+
+      - uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684  # v4.2.3
+        with:
+          path: ~/.terraform.d/plugin-cache
+          key: tf-providers-${{ matrix.env }}-${{ hashFiles(format('infra/envs/{0}/primary/.terraform.lock.hcl', matrix.env)) }}
+          restore-keys: tf-providers-${{ matrix.env }}-
+
+      - name: terraform init
+        working-directory: infra/envs/${{ matrix.env }}/primary
+        run: terraform init -lock-timeout=120s
+
+      - name: terraform plan
+        working-directory: infra/envs/${{ matrix.env }}/primary
+        run: terraform plan -no-color -out=tfplan -lock-timeout=120s
+
+      - name: Export plan artifacts
+        working-directory: infra/envs/${{ matrix.env }}/primary
+        run: |
+          mkdir -p "${{ github.workspace }}/plan-output"
+          terraform show -json  tfplan > "${{ github.workspace }}/plan-output/plan.json"
+          terraform show -no-color tfplan > "${{ github.workspace }}/plan-output/plan.txt"
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
+        if: always()
+        with:
+          name: tfplan-${{ matrix.env }}
+          path: ${{ github.workspace }}/plan-output/
+
+  # ── 4. Security scan ──────────────────────────────────────────────────────
+  scan:
+    name: Scan (${{ matrix.env }})
+    runs-on: ubuntu-latest
+    needs: plan
+    permissions:
+      contents: read
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        env: [dev, prod]
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Download plan artifact
+        uses: actions/download-artifact@95815c38cf2ff2164869cbab79da8d1f422bc89e  # v4.2.1
+        with:
+          name: tfplan-${{ matrix.env }}
+          path: plan-output/
+
+      # ── Trivy: SARIF (gating — exit 1 on HIGH/CRITICAL) ───────────────────
+      - name: Trivy SARIF scan (gating)
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25  # v0.36.0
+        with:
+          scan-type: config
+          scan-ref: plan-output/plan.json
+          exit-code: '1'
+          severity: ${{ env.SEVERITY_THRESHOLD }}
+          format: sarif
+          output: trivy-${{ matrix.env }}.sarif
+          trivyignores: .trivyignore
+
+      # ── Trivy: table (non-gating — written to file for PR comment) ─────────
+      - name: Trivy table summary (non-gating)
+        if: always()
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25  # v0.36.0
+        with:
+          scan-type: config
+          scan-ref: plan-output/plan.json
+          exit-code: '0'
+          severity: ${{ env.SEVERITY_THRESHOLD }}
+          format: table
+          output: trivy-summary-${{ matrix.env }}.txt
+          trivyignores: .trivyignore
+
+      # ── Checkov: SARIF (gating — hard-fail on HIGH/CRITICAL) ──────────────
+      - name: Install Checkov
+        if: always()
+        run: pip install checkov
+
+      - name: Checkov SARIF scan (gating)
+        if: always()
+        run: |
+          checkov \
+            --file plan-output/plan.json \
+            --framework terraform_plan \
+            --config-file .checkov.yaml \
+            --hard-fail-on "${{ env.SEVERITY_THRESHOLD }}" \
+            --output sarif \
+            --output-file-path .
+          mv results_sarif.sarif "checkov-${{ matrix.env }}.sarif"
+
+      # ── Checkov: CLI summary (non-gating — written to file for PR comment) ─
+      - name: Checkov CLI summary (non-gating)
+        if: always()
+        run: |
+          checkov \
+            --file plan-output/plan.json \
+            --framework terraform_plan \
+            --config-file .checkov.yaml \
+            --soft-fail \
+            --output cli 2>&1 | tee "checkov-summary-${{ matrix.env }}.txt" || true
+
+      # ── Upload SARIF to GitHub Code Scanning ──────────────────────────────
+      - name: Upload Trivy SARIF
+        if: always()
+        uses: github/codeql-action/upload-sarif@28deaeda66b76a05916b6923827895f2b14ab387  # v3.28.16
+        with:
+          sarif_file: trivy-${{ matrix.env }}.sarif
+          category: trivy-${{ matrix.env }}
+
+      - name: Upload Checkov SARIF
+        if: always()
+        uses: github/codeql-action/upload-sarif@28deaeda66b76a05916b6923827895f2b14ab387  # v3.28.16
+        with:
+          sarif_file: checkov-${{ matrix.env }}.sarif
+          category: checkov-${{ matrix.env }}
+
+      # ── Upload scan summary artifact ───────────────────────────────────────
+      - name: Upload scan summary artifact
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
+        with:
+          name: scan-summary-${{ matrix.env }}
+          path: |
+            trivy-summary-${{ matrix.env }}.txt
+            checkov-summary-${{ matrix.env }}.txt
+
+  # ── 5. Infracost ──────────────────────────────────────────────────────────
+  infracost:
+    name: Infracost (${{ matrix.env }})
+    runs-on: ubuntu-latest
+    needs: plan
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        env: [dev, prod]
+    steps:
+      - uses: infracost/actions/setup@d51fc54d23c9ad90f984b884257bd96dc2625067  # v4.1.0
+        with:
+          api-key: ${{ secrets.INFRACOST_API_KEY }}
+
+      - name: Download plan artifact
+        uses: actions/download-artifact@95815c38cf2ff2164869cbab79da8d1f422bc89e  # v4.2.1
+        with:
+          name: tfplan-${{ matrix.env }}
+          path: plan-output/
+
+      - name: Infracost breakdown
+        run: |
+          infracost breakdown \
+            --path plan-output/plan.json \
+            --format json \
+            --out-file "infracost-${{ matrix.env }}.json"
+
+      - name: Upload Infracost artifact
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
+        with:
+          name: infracost-${{ matrix.env }}
+          path: infracost-${{ matrix.env }}.json
+
+  # ── 6. Sticky PR comment ──────────────────────────────────────────────────
+  comment:
+    name: Comment
+    runs-on: ubuntu-latest
+    needs: [scan, infracost]
+    if: ${{ !cancelled() }}
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Download plan artifacts
+        uses: actions/download-artifact@95815c38cf2ff2164869cbab79da8d1f422bc89e  # v4.2.1
+        continue-on-error: true
+        with:
+          pattern: tfplan-*
+          path: artifacts/
+
+      - name: Download scan summary artifacts
+        uses: actions/download-artifact@95815c38cf2ff2164869cbab79da8d1f422bc89e  # v4.2.1
+        continue-on-error: true
+        with:
+          pattern: scan-summary-*
+          path: artifacts/
+
+      - name: Download Infracost artifacts
+        uses: actions/download-artifact@95815c38cf2ff2164869cbab79da8d1f422bc89e  # v4.2.1
+        continue-on-error: true
+        with:
+          pattern: infracost-*
+          path: artifacts/
+
+      - name: Build comment
+        run: |
+          python3 - <<'PYEOF'
+          import json, os, glob
+
+          MARKER = '<!-- mrhs-tf-report -->'
+          envs = ['dev', 'prod']
+          parts = [f'{MARKER}\n## Terraform PR report\n']
+
+          for env in envs:
+              parts.append(f'\n### Environment: `{env}`\n')
+
+              # Plan
+              plan_files = glob.glob(f'artifacts/tfplan-{env}/plan.txt')
+              if plan_files:
+                  with open(plan_files[0]) as f:
+                      plan_text = f.read()
+                  if len(plan_text) > 28000:
+                      plan_text = plan_text[:28000] + '\n\n... (truncated — see workflow logs for full plan)'
+                  parts.append(
+                      f'<details><summary>Plan</summary>\n\n'
+                      f'```hcl\n{plan_text}\n```\n\n</details>\n'
+                  )
+              else:
+                  parts.append('_Plan output not available._\n')
+
+              # Trivy summary
+              trivy_files = glob.glob(f'artifacts/scan-summary-{env}/trivy-summary-{env}.txt')
+              if trivy_files:
+                  with open(trivy_files[0]) as f:
+                      trivy_text = f.read()
+                  if len(trivy_text) > 8000:
+                      trivy_text = trivy_text[:8000] + '\n... (truncated)'
+                  parts.append(
+                      f'<details><summary>Trivy summary</summary>\n\n'
+                      f'```\n{trivy_text}\n```\n\n</details>\n'
+                  )
+              else:
+                  parts.append('_Trivy summary not available._\n')
+
+              # Checkov summary
+              scan_files = glob.glob(f'artifacts/scan-summary-{env}/checkov-summary-{env}.txt')
+              if scan_files:
+                  with open(scan_files[0]) as f:
+                      scan_text = f.read()
+                  if len(scan_text) > 8000:
+                      scan_text = scan_text[:8000] + '\n... (truncated)'
+                  parts.append(
+                      f'<details><summary>Checkov summary</summary>\n\n'
+                      f'```\n{scan_text}\n```\n\n</details>\n'
+                  )
+              else:
+                  parts.append('_Checkov summary not available._\n')
+
+              # Infracost
+              ic_files = glob.glob(f'artifacts/infracost-{env}/infracost-{env}.json')
+              if ic_files:
+                  try:
+                      with open(ic_files[0]) as f:
+                          ic = json.load(f)
+                      total = ic.get('totalMonthlyCost', 'N/A')
+                      diff  = ic.get('diffTotalMonthlyCost', None)
+                      cost_line = f'**Est. monthly cost:** ${total}'
+                      if diff is not None:
+                          sign = '+' if float(diff) >= 0 else ''
+                          cost_line += f' (change: {sign}${diff})'
+                      parts.append(cost_line + '\n')
+                  except Exception as e:
+                      parts.append(f'_Cost estimate parse error: {e}_\n')
+              else:
+                  parts.append('_Cost estimate not available._\n')
+
+          comment = ''.join(parts)
+          with open('comment.md', 'w') as f:
+              f.write(comment)
+          print(f'Built comment.md — {len(comment)} chars')
+          PYEOF
+
+      - name: Find existing comment
+        id: find-comment
+        uses: peter-evans/find-comment@3eae4d37986fb5a8592848f6a574fdf654e61f9e  # v3.1.0
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-author: github-actions[bot]
+          body-includes: "<!-- mrhs-tf-report -->"
+
+      - name: Create or update comment
+        uses: peter-evans/create-or-update-comment@71345be0265236311c031f5c7866368bd1eff043  # v4.0.0
+        with:
+          comment-id: ${{ steps.find-comment.outputs.comment-id }}
+          issue-number: ${{ github.event.pull_request.number }}
+          body-path: comment.md
+          edit-mode: replace
+
+  # ── 7. Claude security review (runs independently, posts own comment) ──────
+  claude-review:
+    name: Claude security review
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 2
+
+      - uses: anthropics/claude-code-security-review@0c6a49f1fa56a1d472575da86a94dbc1edb78eda  # main
+        with:
+          comment-pr: true
+          claude-api-key: ${{ secrets.CLAUDE_API_KEY }}
