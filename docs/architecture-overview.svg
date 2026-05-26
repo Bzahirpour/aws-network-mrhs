@@ -1,0 +1,186 @@
+<svg viewBox="0 0 1600 920" xmlns="http://www.w3.org/2000/svg" font-family="'IBM Plex Sans', 'Segoe UI', system-ui, -apple-system, sans-serif">
+  <defs>
+    <style>
+      .title { font-size: 26px; font-weight: 600; fill: #0f172a; }
+      .subtitle { font-size: 13px; font-weight: 400; fill: #64748b; }
+      .region-label { font-size: 18px; font-weight: 600; fill: #334155; letter-spacing: 0.5px; }
+      .region-cidr { font-size: 11px; fill: #64748b; font-family: 'JetBrains Mono','SF Mono',Menlo,Consolas,monospace; }
+      .vpc-label { font-size: 13px; font-weight: 600; fill: #0f172a; }
+      .vpc-cidr { font-size: 10px; fill: #64748b; font-family: 'JetBrains Mono','SF Mono',Menlo,Consolas,monospace; }
+      .component { font-size: 11px; font-weight: 500; fill: #1e293b; }
+      .tgw-label { font-size: 13px; font-weight: 700; fill: #ffffff; letter-spacing: 0.5px; }
+      .annotation { font-size: 10px; fill: #64748b; font-style: italic; }
+      .legend-label { font-size: 11px; fill: #334155; }
+      .traffic-label { font-size: 10px; fill: #475569; font-family: 'JetBrains Mono','SF Mono',Menlo,Consolas,monospace; }
+    </style>
+
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#475569"/>
+    </marker>
+    <marker id="arrow-peer" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#8b5cf6"/>
+    </marker>
+    <marker id="arrow-internet" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#64748b"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1600" height="920" fill="#fafafa"/>
+
+  <!-- Title block -->
+  <text x="800" y="42" text-anchor="middle" class="title">Multi-Region Hub-and-Spoke Architecture</text>
+  <text x="800" y="64" text-anchor="middle" class="subtitle">aws-network-foundation · us-east-1 + us-west-2 · TGW inter-region peering</text>
+
+  <!-- Internet cloud (top center) -->
+  <ellipse cx="800" cy="120" rx="70" ry="28" fill="#ffffff" stroke="#94a3b8" stroke-width="2"/>
+  <text x="800" y="126" text-anchor="middle" class="component">Internet</text>
+
+  <!-- ============================================ -->
+  <!-- REGION: us-east-1 (LEFT) -->
+  <!-- ============================================ -->
+  <rect x="50" y="180" width="720" height="680" rx="14" fill="#ffffff" stroke="#cbd5e1" stroke-width="2" stroke-dasharray="6 4"/>
+  <text x="78" y="212" class="region-label">us-east-1</text>
+  <text x="78" y="230" class="region-cidr">10.0.0.0/16</text>
+
+  <!-- Egress VPC -->
+  <rect x="100" y="260" width="620" height="105" rx="8" fill="#fef3c7" stroke="#f59e0b" stroke-width="2"/>
+  <text x="120" y="285" class="vpc-label">Egress VPC</text>
+  <text x="120" y="300" class="vpc-cidr">10.0.0.0/20</text>
+  <!-- IGW (VPC-level) -->
+  <rect x="380" y="320" width="80" height="32" rx="4" fill="#ffffff" stroke="#f59e0b" stroke-width="1.5"/>
+  <text x="420" y="341" text-anchor="middle" class="component">IGW</text>
+  <!-- Regional NAT GW (VPC-level) -->
+  <rect x="475" y="320" width="135" height="32" rx="4" fill="#ffffff" stroke="#f59e0b" stroke-width="1.5"/>
+  <text x="542" y="341" text-anchor="middle" class="component">Regional NAT GW</text>
+  <text x="120" y="340" class="annotation">no public subnet — VPC-level</text>
+
+  <!-- TGW (hub) -->
+  <rect x="335" y="430" width="150" height="60" rx="10" fill="#8b5cf6" stroke="#7c3aed" stroke-width="2"/>
+  <text x="410" y="455" text-anchor="middle" class="tgw-label">Transit Gateway</text>
+  <text x="410" y="475" text-anchor="middle" class="vpc-cidr" fill="#ede9fe">tgw-use1</text>
+
+  <!-- Shared Services VPC -->
+  <rect x="510" y="555" width="210" height="180" rx="8" fill="#ccfbf1" stroke="#14b8a6" stroke-width="2"/>
+  <text x="530" y="580" class="vpc-label">Shared Services VPC</text>
+  <text x="530" y="595" class="vpc-cidr">10.0.16.0/20</text>
+  <!-- Endpoints -->
+  <rect x="530" y="610" width="170" height="28" rx="4" fill="#ffffff" stroke="#14b8a6" stroke-width="1.5"/>
+  <text x="615" y="628" text-anchor="middle" class="component">SSM Interface Endpoint</text>
+  <rect x="530" y="645" width="170" height="28" rx="4" fill="#ffffff" stroke="#14b8a6" stroke-width="1.5"/>
+  <text x="615" y="663" text-anchor="middle" class="component">SSM Messages</text>
+  <rect x="530" y="680" width="170" height="28" rx="4" fill="#ffffff" stroke="#14b8a6" stroke-width="1.5"/>
+  <text x="615" y="698" text-anchor="middle" class="component">EC2 Messages</text>
+  <text x="530" y="725" class="annotation">+ PHZ associations</text>
+
+  <!-- Spoke-1 VPC -->
+  <rect x="100" y="555" width="180" height="120" rx="8" fill="#dbeafe" stroke="#3b82f6" stroke-width="2"/>
+  <text x="120" y="580" class="vpc-label">Spoke-1 VPC</text>
+  <text x="120" y="595" class="vpc-cidr">10.0.32.0/20</text>
+  <rect x="120" y="610" width="140" height="32" rx="4" fill="#ffffff" stroke="#3b82f6" stroke-width="1.5"/>
+  <text x="190" y="631" text-anchor="middle" class="component">workload subnet</text>
+
+  <!-- Spoke-2 VPC -->
+  <rect x="300" y="555" width="180" height="120" rx="8" fill="#dbeafe" stroke="#3b82f6" stroke-width="2"/>
+  <text x="320" y="580" class="vpc-label">Spoke-2 VPC</text>
+  <text x="320" y="595" class="vpc-cidr">10.0.48.0/20</text>
+  <rect x="320" y="610" width="140" height="32" rx="4" fill="#ffffff" stroke="#3b82f6" stroke-width="1.5"/>
+  <text x="390" y="631" text-anchor="middle" class="component">workload subnet</text>
+
+  <!-- Arrows: us-east-1 -->
+  <!-- Egress -> Internet -->
+  <line x1="420" y1="320" x2="420" y2="155" stroke="#64748b" stroke-width="2" marker-end="url(#arrow-internet)"/>
+  <text x="428" y="240" class="traffic-label">0.0.0.0/0</text>
+  <!-- Egress <-> TGW -->
+  <line x1="410" y1="365" x2="410" y2="430" stroke="#475569" stroke-width="2"/>
+  <!-- Spoke-1 <-> TGW -->
+  <line x1="220" y1="555" x2="370" y2="490" stroke="#475569" stroke-width="2"/>
+  <!-- Spoke-2 <-> TGW -->
+  <line x1="395" y1="555" x2="410" y2="495" stroke="#475569" stroke-width="2"/>
+  <!-- Shared Services <-> TGW -->
+  <line x1="560" y1="555" x2="450" y2="495" stroke="#475569" stroke-width="2"/>
+
+  <!-- ============================================ -->
+  <!-- REGION: us-west-2 (RIGHT) - Mirror -->
+  <!-- ============================================ -->
+  <rect x="830" y="180" width="720" height="680" rx="14" fill="#ffffff" stroke="#cbd5e1" stroke-width="2" stroke-dasharray="6 4"/>
+  <text x="858" y="212" class="region-label">us-west-2</text>
+  <text x="858" y="230" class="region-cidr">10.1.0.0/16</text>
+
+  <!-- Egress VPC -->
+  <rect x="880" y="260" width="620" height="105" rx="8" fill="#fef3c7" stroke="#f59e0b" stroke-width="2"/>
+  <text x="900" y="285" class="vpc-label">Egress VPC</text>
+  <text x="900" y="300" class="vpc-cidr">10.1.0.0/20</text>
+  <rect x="1160" y="320" width="80" height="32" rx="4" fill="#ffffff" stroke="#f59e0b" stroke-width="1.5"/>
+  <text x="1200" y="341" text-anchor="middle" class="component">IGW</text>
+  <rect x="1255" y="320" width="135" height="32" rx="4" fill="#ffffff" stroke="#f59e0b" stroke-width="1.5"/>
+  <text x="1322" y="341" text-anchor="middle" class="component">Regional NAT GW</text>
+  <text x="900" y="340" class="annotation">no public subnet — VPC-level</text>
+
+  <!-- TGW -->
+  <rect x="1115" y="430" width="150" height="60" rx="10" fill="#8b5cf6" stroke="#7c3aed" stroke-width="2"/>
+  <text x="1190" y="455" text-anchor="middle" class="tgw-label">Transit Gateway</text>
+  <text x="1190" y="475" text-anchor="middle" class="vpc-cidr" fill="#ede9fe">tgw-usw2</text>
+
+  <!-- Shared Services VPC -->
+  <rect x="1290" y="555" width="210" height="180" rx="8" fill="#ccfbf1" stroke="#14b8a6" stroke-width="2"/>
+  <text x="1310" y="580" class="vpc-label">Shared Services VPC</text>
+  <text x="1310" y="595" class="vpc-cidr">10.1.16.0/20</text>
+  <rect x="1310" y="610" width="170" height="28" rx="4" fill="#ffffff" stroke="#14b8a6" stroke-width="1.5"/>
+  <text x="1395" y="628" text-anchor="middle" class="component">SSM Interface Endpoint</text>
+  <rect x="1310" y="645" width="170" height="28" rx="4" fill="#ffffff" stroke="#14b8a6" stroke-width="1.5"/>
+  <text x="1395" y="663" text-anchor="middle" class="component">SSM Messages</text>
+  <rect x="1310" y="680" width="170" height="28" rx="4" fill="#ffffff" stroke="#14b8a6" stroke-width="1.5"/>
+  <text x="1395" y="698" text-anchor="middle" class="component">EC2 Messages</text>
+  <text x="1310" y="725" class="annotation">+ PHZ associations</text>
+
+  <!-- Spoke-1 -->
+  <rect x="880" y="555" width="180" height="120" rx="8" fill="#dbeafe" stroke="#3b82f6" stroke-width="2"/>
+  <text x="900" y="580" class="vpc-label">Spoke-1 VPC</text>
+  <text x="900" y="595" class="vpc-cidr">10.1.32.0/20</text>
+  <rect x="900" y="610" width="140" height="32" rx="4" fill="#ffffff" stroke="#3b82f6" stroke-width="1.5"/>
+  <text x="970" y="631" text-anchor="middle" class="component">workload subnet</text>
+
+  <!-- Spoke-2 -->
+  <rect x="1080" y="555" width="180" height="120" rx="8" fill="#dbeafe" stroke="#3b82f6" stroke-width="2"/>
+  <text x="1100" y="580" class="vpc-label">Spoke-2 VPC</text>
+  <text x="1100" y="595" class="vpc-cidr">10.1.48.0/20</text>
+  <rect x="1100" y="610" width="140" height="32" rx="4" fill="#ffffff" stroke="#3b82f6" stroke-width="1.5"/>
+  <text x="1170" y="631" text-anchor="middle" class="component">workload subnet</text>
+
+  <!-- Arrows: us-west-2 -->
+  <line x1="1200" y1="320" x2="1200" y2="155" stroke="#64748b" stroke-width="2" marker-end="url(#arrow-internet)"/>
+  <text x="1208" y="240" class="traffic-label">0.0.0.0/0</text>
+  <line x1="1190" y1="365" x2="1190" y2="430" stroke="#475569" stroke-width="2"/>
+  <line x1="1000" y1="555" x2="1150" y2="490" stroke="#475569" stroke-width="2"/>
+  <line x1="1175" y1="555" x2="1190" y2="495" stroke="#475569" stroke-width="2"/>
+  <line x1="1340" y1="555" x2="1230" y2="495" stroke="#475569" stroke-width="2"/>
+
+  <!-- ============================================ -->
+  <!-- TGW Peering (between regions) -->
+  <!-- ============================================ -->
+  <line x1="485" y1="460" x2="720" y2="460" stroke="#8b5cf6" stroke-width="3" stroke-dasharray="10 6"/>
+  <line x1="880" y1="460" x2="1115" y2="460" stroke="#8b5cf6" stroke-width="3" stroke-dasharray="10 6"/>
+  <rect x="720" y="444" width="160" height="32" rx="6" fill="#ffffff" stroke="#8b5cf6" stroke-width="2"/>
+  <text x="800" y="465" text-anchor="middle" class="component" fill="#7c3aed" font-weight="600">TGW Peering</text>
+
+  <!-- ============================================ -->
+  <!-- Legend (bottom) -->
+  <!-- ============================================ -->
+  <rect x="50" y="880" width="1500" height="30" fill="none"/>
+  <!-- Egress -->
+  <rect x="60" y="887" width="14" height="14" rx="2" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>
+  <text x="82" y="899" class="legend-label">Egress VPC (NAT/IGW)</text>
+  <!-- Shared -->
+  <rect x="240" y="887" width="14" height="14" rx="2" fill="#ccfbf1" stroke="#14b8a6" stroke-width="1.5"/>
+  <text x="262" y="899" class="legend-label">Shared Services VPC (Interface endpoints + PHZ)</text>
+  <!-- Spoke -->
+  <rect x="610" y="887" width="14" height="14" rx="2" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
+  <text x="632" y="899" class="legend-label">Spoke VPC (workloads)</text>
+  <!-- TGW -->
+  <rect x="800" y="887" width="14" height="14" rx="2" fill="#8b5cf6" stroke="#7c3aed" stroke-width="1.5"/>
+  <text x="822" y="899" class="legend-label">Transit Gateway (hub)</text>
+  <!-- Peering line -->
+  <line x1="970" y1="894" x2="1010" y2="894" stroke="#8b5cf6" stroke-width="2.5" stroke-dasharray="6 4"/>
+  <text x="1018" y="899" class="legend-label">TGW Peering (inter-region)</text>
+</svg>

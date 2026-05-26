@@ -1,0 +1,220 @@
+<svg viewBox="0 0 1600 1100" xmlns="http://www.w3.org/2000/svg" font-family="'IBM Plex Sans', 'Segoe UI', system-ui, -apple-system, sans-serif">
+  <defs>
+    <style>
+      .title { font-size: 26px; font-weight: 600; fill: #0f172a; }
+      .subtitle { font-size: 13px; font-weight: 400; fill: #64748b; }
+      .vpc-label { font-size: 14px; font-weight: 600; fill: #0f172a; }
+      .vpc-cidr { font-size: 10px; fill: #64748b; font-family: 'JetBrains Mono','SF Mono',Menlo,Consolas,monospace; }
+      .rt-label { font-size: 12px; font-weight: 700; fill: #ffffff; letter-spacing: 0.3px; }
+      .rt-sublabel { font-size: 10px; fill: #ffffff; opacity: 0.85; font-family: 'JetBrains Mono','SF Mono',Menlo,Consolas,monospace; }
+      .tgw-title { font-size: 16px; font-weight: 700; fill: #ffffff; letter-spacing: 0.5px; }
+      .component { font-size: 11px; font-weight: 500; fill: #1e293b; }
+      .annotation { font-size: 11px; fill: #475569; }
+      .annotation-bold { font-size: 11px; font-weight: 600; fill: #334155; }
+      .legend-label { font-size: 11px; fill: #334155; }
+      .traffic-label { font-size: 10px; fill: #475569; font-family: 'JetBrains Mono','SF Mono',Menlo,Consolas,monospace; }
+      .callout-title { font-size: 14px; font-weight: 700; fill: #0f172a; }
+      .callout-step { font-size: 11px; fill: #1e293b; }
+      .step-num { font-size: 12px; font-weight: 700; fill: #ffffff; }
+    </style>
+
+    <marker id="associate" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#0f172a"/>
+    </marker>
+    <marker id="propagate" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#94a3b8"/>
+    </marker>
+    <marker id="dns-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#14b8a6"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1600" height="1100" fill="#fafafa"/>
+
+  <!-- Title -->
+  <text x="800" y="42" text-anchor="middle" class="title">Detail View · TGW Route Domains &amp; Centralized DNS</text>
+  <text x="800" y="64" text-anchor="middle" class="subtitle">us-east-1 · Three route tables · Associations vs Propagations · PHZ-driven endpoint resolution</text>
+
+  <!-- =========================================== -->
+  <!-- TGW with three route tables (central hub) -->
+  <!-- =========================================== -->
+  <rect x="380" y="380" width="800" height="340" rx="14" fill="#5b21b6" stroke="#4c1d95" stroke-width="2"/>
+  <text x="780" y="410" text-anchor="middle" class="tgw-title">Transit Gateway · tgw-use1</text>
+
+  <!-- rt-egress -->
+  <rect x="410" y="430" width="240" height="270" rx="8" fill="#d97706" stroke="#b45309" stroke-width="2"/>
+  <text x="530" y="458" text-anchor="middle" class="rt-label">rt-egress</text>
+  <text x="530" y="475" text-anchor="middle" class="rt-sublabel">route domain</text>
+  <line x1="430" y1="490" x2="630" y2="490" stroke="#ffffff" stroke-width="1" opacity="0.4"/>
+  <text x="425" y="510" class="rt-sublabel">Associates:</text>
+  <text x="425" y="528" class="rt-sublabel">  · egress-attach</text>
+  <text x="425" y="555" class="rt-sublabel">Propagations: none</text>
+  <text x="425" y="575" class="rt-sublabel">(it's the target,</text>
+  <text x="425" y="590" class="rt-sublabel">doesn't advertise)</text>
+  <text x="425" y="625" class="rt-sublabel">Routes:</text>
+  <text x="425" y="643" class="rt-sublabel">  10.0.32.0/20 → s1</text>
+  <text x="425" y="658" class="rt-sublabel">  10.0.48.0/20 → s2</text>
+  <text x="425" y="673" class="rt-sublabel">  10.0.16.0/20 → ss</text>
+  <text x="425" y="688" class="rt-sublabel">  (return paths)</text>
+
+  <!-- rt-shared -->
+  <rect x="670" y="430" width="240" height="270" rx="8" fill="#0d9488" stroke="#0f766e" stroke-width="2"/>
+  <text x="790" y="458" text-anchor="middle" class="rt-label">rt-shared</text>
+  <text x="790" y="475" text-anchor="middle" class="rt-sublabel">route domain</text>
+  <line x1="690" y1="490" x2="890" y2="490" stroke="#ffffff" stroke-width="1" opacity="0.4"/>
+  <text x="685" y="510" class="rt-sublabel">Associates:</text>
+  <text x="685" y="528" class="rt-sublabel">  · shared-svc-attach</text>
+  <text x="685" y="555" class="rt-sublabel">Propagates to:</text>
+  <text x="685" y="572" class="rt-sublabel">  · rt-spoke</text>
+  <text x="685" y="600" class="rt-sublabel">Routes:</text>
+  <text x="685" y="618" class="rt-sublabel">  10.0.32.0/20 → s1</text>
+  <text x="685" y="633" class="rt-sublabel">  10.0.48.0/20 → s2</text>
+  <text x="685" y="648" class="rt-sublabel">  (spokes call us)</text>
+  <text x="685" y="678" class="rt-sublabel" font-style="italic">Default: 0.0.0.0/0</text>
+  <text x="685" y="693" class="rt-sublabel" font-style="italic">  → egress-attach</text>
+
+  <!-- rt-spoke -->
+  <rect x="930" y="430" width="240" height="270" rx="8" fill="#2563eb" stroke="#1d4ed8" stroke-width="2"/>
+  <text x="1050" y="458" text-anchor="middle" class="rt-label">rt-spoke</text>
+  <text x="1050" y="475" text-anchor="middle" class="rt-sublabel">route domain</text>
+  <line x1="950" y1="490" x2="1150" y2="490" stroke="#ffffff" stroke-width="1" opacity="0.4"/>
+  <text x="945" y="510" class="rt-sublabel">Associates:</text>
+  <text x="945" y="528" class="rt-sublabel">  · spoke-1-attach</text>
+  <text x="945" y="543" class="rt-sublabel">  · spoke-2-attach</text>
+  <text x="945" y="570" class="rt-sublabel">Propagations:</text>
+  <text x="945" y="588" class="rt-sublabel">  · (from rt-shared:</text>
+  <text x="945" y="603" class="rt-sublabel">     shared-svc CIDR)</text>
+  <text x="945" y="635" class="rt-sublabel">Routes:</text>
+  <text x="945" y="653" class="rt-sublabel">  10.0.16.0/20 → ss</text>
+  <text x="945" y="668" class="rt-sublabel">  0.0.0.0/0 → egress</text>
+  <text x="945" y="688" class="rt-sublabel" font-style="italic">no spoke routes</text>
+
+  <!-- =========================================== -->
+  <!-- VPCs around the TGW -->
+  <!-- =========================================== -->
+
+  <!-- Egress VPC (top) -->
+  <rect x="430" y="140" width="700" height="120" rx="8" fill="#fef3c7" stroke="#f59e0b" stroke-width="2"/>
+  <text x="450" y="170" class="vpc-label">Egress VPC</text>
+  <text x="450" y="186" class="vpc-cidr">10.0.0.0/20</text>
+  <rect x="650" y="200" width="80" height="32" rx="4" fill="#ffffff" stroke="#f59e0b" stroke-width="1.5"/>
+  <text x="690" y="221" text-anchor="middle" class="component">IGW</text>
+  <rect x="745" y="200" width="135" height="32" rx="4" fill="#ffffff" stroke="#f59e0b" stroke-width="1.5"/>
+  <text x="812" y="221" text-anchor="middle" class="component">Regional NAT GW</text>
+  <rect x="900" y="200" width="120" height="32" rx="4" fill="#fed7aa" stroke="#f59e0b" stroke-width="1.5"/>
+  <text x="960" y="221" text-anchor="middle" class="component">tgw-attach</text>
+  <text x="450" y="246" class="annotation">No public subnet — IGW &amp; Regional NAT GW are VPC-level resources.</text>
+
+  <!-- Spoke-1 VPC (bottom left) -->
+  <rect x="120" y="820" width="320" height="170" rx="8" fill="#dbeafe" stroke="#3b82f6" stroke-width="2"/>
+  <text x="140" y="850" class="vpc-label">Spoke-1 VPC</text>
+  <text x="140" y="866" class="vpc-cidr">10.0.32.0/20</text>
+  <rect x="140" y="880" width="120" height="30" rx="4" fill="#ffffff" stroke="#3b82f6" stroke-width="1.5"/>
+  <text x="200" y="900" text-anchor="middle" class="component">EC2 (workload)</text>
+  <rect x="280" y="880" width="140" height="30" rx="4" fill="#bfdbfe" stroke="#3b82f6" stroke-width="1.5"/>
+  <text x="350" y="900" text-anchor="middle" class="component">tgw-attach</text>
+  <text x="140" y="938" class="annotation">spoke-1 sees only: 10.0.16.0/20, 0.0.0.0/0</text>
+  <text x="140" y="954" class="annotation">cannot route to 10.0.48.0/20 (spoke-2)</text>
+  <text x="140" y="970" class="annotation" font-style="italic">→ route domain isolation enforced</text>
+
+  <!-- Spoke-2 VPC (bottom right) -->
+  <rect x="1100" y="820" width="320" height="170" rx="8" fill="#dbeafe" stroke="#3b82f6" stroke-width="2"/>
+  <text x="1120" y="850" class="vpc-label">Spoke-2 VPC</text>
+  <text x="1120" y="866" class="vpc-cidr">10.0.48.0/20</text>
+  <rect x="1120" y="880" width="140" height="30" rx="4" fill="#bfdbfe" stroke="#3b82f6" stroke-width="1.5"/>
+  <text x="1190" y="900" text-anchor="middle" class="component">tgw-attach</text>
+  <rect x="1280" y="880" width="120" height="30" rx="4" fill="#ffffff" stroke="#3b82f6" stroke-width="1.5"/>
+  <text x="1340" y="900" text-anchor="middle" class="component">EC2 (workload)</text>
+  <text x="1120" y="938" class="annotation">mirror of spoke-1:</text>
+  <text x="1120" y="954" class="annotation">same RT, same isolation profile</text>
+
+  <!-- Shared Services VPC (right) -->
+  <rect x="1230" y="430" width="320" height="270" rx="8" fill="#ccfbf1" stroke="#14b8a6" stroke-width="2"/>
+  <text x="1250" y="460" class="vpc-label">Shared Services VPC</text>
+  <text x="1250" y="476" class="vpc-cidr">10.0.16.0/20</text>
+  <rect x="1250" y="495" width="160" height="30" rx="4" fill="#ffffff" stroke="#14b8a6" stroke-width="1.5"/>
+  <text x="1330" y="515" text-anchor="middle" class="component">SSM endpoint ENI</text>
+  <rect x="1250" y="532" width="160" height="30" rx="4" fill="#ffffff" stroke="#14b8a6" stroke-width="1.5"/>
+  <text x="1330" y="552" text-anchor="middle" class="component">SSM Messages ENI</text>
+  <rect x="1250" y="569" width="160" height="30" rx="4" fill="#ffffff" stroke="#14b8a6" stroke-width="1.5"/>
+  <text x="1330" y="589" text-anchor="middle" class="component">EC2 Messages ENI</text>
+  <rect x="1250" y="610" width="160" height="28" rx="4" fill="#a7f3d0" stroke="#14b8a6" stroke-width="1.5"/>
+  <text x="1330" y="629" text-anchor="middle" class="component">PHZ associations</text>
+  <rect x="1420" y="495" width="120" height="30" rx="4" fill="#99f6e4" stroke="#14b8a6" stroke-width="1.5"/>
+  <text x="1480" y="515" text-anchor="middle" class="component">tgw-attach</text>
+
+  <!-- =========================================== -->
+  <!-- ASSOCIATION arrows (solid, dark) -->
+  <!-- VPC attachment → RT it associates to -->
+  <!-- =========================================== -->
+
+  <!-- Egress attachment → rt-egress (solid down) -->
+  <line x1="960" y1="232" x2="530" y2="430" stroke="#0f172a" stroke-width="2.5" marker-end="url(#associate)"/>
+  <text x="730" y="320" class="annotation-bold" fill="#0f172a">associates to rt-egress</text>
+
+  <!-- Spoke-1 attachment → rt-spoke -->
+  <path d="M 350 880 Q 700 850 1050 700" stroke="#0f172a" stroke-width="2.5" fill="none" marker-end="url(#associate)"/>
+
+  <!-- Spoke-2 attachment → rt-spoke -->
+  <path d="M 1190 880 Q 1100 800 1050 700" stroke="#0f172a" stroke-width="2.5" fill="none" marker-end="url(#associate)"/>
+
+  <!-- Shared-svc attachment → rt-shared -->
+  <path d="M 1480 525 Q 1100 540 910 555" stroke="#0f172a" stroke-width="2.5" fill="none" marker-end="url(#associate)"/>
+
+  <!-- =========================================== -->
+  <!-- PROPAGATION arrow (dashed, grey) -->
+  <!-- rt-shared → rt-spoke (the asymmetric magic) -->
+  <!-- =========================================== -->
+  <path d="M 790 720 Q 920 780 1050 720" stroke="#94a3b8" stroke-width="2.5" stroke-dasharray="7 5" fill="none" marker-end="url(#propagate)"/>
+  <text x="800" y="800" class="annotation-bold" fill="#475569">propagates shared-svc CIDR into rt-spoke</text>
+  <text x="800" y="816" class="annotation" font-style="italic">spokes learn the path back; shared-svc never learns spokes' CIDRs from each other</text>
+
+  <!-- =========================================== -->
+  <!-- DNS Flow Callout (top-right) -->
+  <!-- =========================================== -->
+  <rect x="60" y="120" width="320" height="240" rx="10" fill="#f0fdfa" stroke="#0d9488" stroke-width="2"/>
+  <text x="80" y="148" class="callout-title" fill="#0f766e">DNS Resolution Flow</text>
+  <text x="80" y="166" class="annotation">spoke EC2 → centralized SSM endpoint</text>
+
+  <!-- Step 1 -->
+  <circle cx="90" cy="195" r="11" fill="#0d9488"/>
+  <text x="90" y="200" text-anchor="middle" class="step-num">1</text>
+  <text x="108" y="192" class="callout-step">EC2 in spoke calls</text>
+  <text x="108" y="207" class="callout-step" font-family="'JetBrains Mono','SF Mono',monospace" font-size="10">ssm.us-east-1.amazonaws.com</text>
+
+  <!-- Step 2 -->
+  <circle cx="90" cy="235" r="11" fill="#0d9488"/>
+  <text x="90" y="240" text-anchor="middle" class="step-num">2</text>
+  <text x="108" y="232" class="callout-step">PHZ associated to spoke VPC</text>
+  <text x="108" y="247" class="callout-step">resolves to endpoint ENI private IPs</text>
+
+  <!-- Step 3 -->
+  <circle cx="90" cy="275" r="11" fill="#0d9488"/>
+  <text x="90" y="280" text-anchor="middle" class="step-num">3</text>
+  <text x="108" y="272" class="callout-step">Traffic → TGW → shared svc VPC</text>
+  <text x="108" y="287" class="callout-step">(via rt-spoke route to 10.0.16.0/20)</text>
+
+  <!-- Step 4 -->
+  <circle cx="90" cy="315" r="11" fill="#0d9488"/>
+  <text x="90" y="320" text-anchor="middle" class="step-num">4</text>
+  <text x="108" y="312" class="callout-step">Endpoint ENI → SSM API</text>
+  <text x="108" y="327" class="callout-step">over PrivateLink (no NAT, no IGW)</text>
+
+  <text x="80" y="350" class="annotation" font-style="italic">Endpoint Private DNS disabled; PHZ overrides</text>
+
+  <!-- =========================================== -->
+  <!-- Legend (bottom) -->
+  <!-- =========================================== -->
+  <rect x="60" y="1020" width="1480" height="60" rx="6" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+  <text x="80" y="1042" class="annotation-bold">Line types:</text>
+
+  <line x1="180" y1="1037" x2="240" y2="1037" stroke="#0f172a" stroke-width="2.5" marker-end="url(#associate)"/>
+  <text x="248" y="1042" class="legend-label">Association (attachment → RT it's associated with)</text>
+
+  <line x1="600" y1="1037" x2="660" y2="1037" stroke="#94a3b8" stroke-width="2.5" stroke-dasharray="6 4" marker-end="url(#propagate)"/>
+  <text x="668" y="1042" class="legend-label">Propagation (routes one RT advertises into another)</text>
+
+  <text x="80" y="1068" class="annotation-bold">Route domain segmentation:</text>
+  <text x="240" y="1068" class="legend-label">rt-spoke (workloads) · rt-shared (services) · rt-egress (internet) — spokes can reach shared + egress, never each other</text>
+</svg>

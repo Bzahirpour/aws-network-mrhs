@@ -42,6 +42,3 @@ Thumbs.db
 *.pub
 
 # Internal planning docs
-docs/PLAN.md
-docs/architecture-overview.svg
-docs/architecture-detail.svg
