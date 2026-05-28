@@ -11,13 +11,12 @@ updates:
           - "*"
 
   - package-ecosystem: terraform
-    directory: /infra/envs/dev/primary
+    directories:
+      - /infra/envs/dev/primary
+      - /infra/envs/prod/primary
     schedule:
       interval: weekly
       day: monday
-
-  - package-ecosystem: terraform
-    directory: /infra/envs/prod/primary
-    schedule:
-      interval: weekly
-      day: monday
+    groups:
+      terraform-providers:
+        patterns: ["*"]
