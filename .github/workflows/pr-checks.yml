@@ -31,11 +31,11 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
         with:
           ref: ${{ github.event.pull_request.head.sha }}
 
-      - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd  # v3.1.2
+      - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e  # v4.0.1
         with:
           terraform_version: ${{ env.TF_VERSION }}
 
@@ -43,11 +43,11 @@ jobs:
         working-directory: infra
         run: terraform fmt -check -recursive
 
-      - uses: terraform-linters/setup-tflint@90f302c255ef959cbfb4bd10581afecdb7ece3e6  # v4.1.1
+      - uses: terraform-linters/setup-tflint@b480b8fcdaa6f2c577f8e4fa799e89e756bb7c93  # v6.2.2
         with:
           tflint_version: ${{ env.TFLINT_VERSION }}
 
-      - uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684  # v4.2.3
+      - uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae  # v5.0.5
         with:
           path: ~/.tflint.d/plugins
           key: tflint-plugins-${{ hashFiles('.tflint.hcl') }}
@@ -72,18 +72,18 @@ jobs:
       matrix:
         env: [dev, prod]
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
         with:
           ref: ${{ github.event.pull_request.head.sha }}
 
-      - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd  # v3.1.2
+      - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e  # v4.0.1
         with:
           terraform_version: ${{ env.TF_VERSION }}
 
       - name: Create plugin cache dir
         run: mkdir -p "$TF_PLUGIN_CACHE_DIR"
 
-      - uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684  # v4.2.3
+      - uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae  # v5.0.5
         with:
           path: ~/.terraform.d/plugin-cache
           key: tf-providers-${{ matrix.env }}-${{ hashFiles(format('infra/envs/{0}/primary/.terraform.lock.hcl', matrix.env)) }}
@@ -110,23 +110,23 @@ jobs:
       matrix:
         env: [dev, prod]
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
         with:
           ref: ${{ github.event.pull_request.head.sha }}
 
-      - uses: aws-actions/configure-aws-credentials@e3dd6a429d7300a6a4c196c26e071d42e0343502  # v4.0.2
+      - uses: aws-actions/configure-aws-credentials@acca2b1b2070338fb9fd1ca27ecee81d687e58e5  # v6.1.2
         with:
           role-to-assume: ${{ env.AWS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd  # v3.1.2
+      - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e  # v4.0.1
         with:
           terraform_version: ${{ env.TF_VERSION }}
 
       - name: Create plugin cache dir
         run: mkdir -p "$TF_PLUGIN_CACHE_DIR"
 
-      - uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684  # v4.2.3
+      - uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae  # v5.0.5
         with:
           path: ~/.terraform.d/plugin-cache
           key: tf-providers-${{ matrix.env }}-${{ hashFiles(format('infra/envs/{0}/primary/.terraform.lock.hcl', matrix.env)) }}
@@ -147,7 +147,7 @@ jobs:
           terraform show -json  tfplan > "${{ github.workspace }}/plan-output/plan.json"
           terraform show -no-color tfplan > "${{ github.workspace }}/plan-output/plan.txt"
 
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         if: always()
         with:
           name: tfplan-${{ matrix.env }}
@@ -166,12 +166,12 @@ jobs:
       matrix:
         env: [dev, prod]
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
         with:
           ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Download plan artifact
-        uses: actions/download-artifact@95815c38cf2ff2164869cbab79da8d1f422bc89e  # v4.2.1
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
         with:
           name: tfplan-${{ matrix.env }}
           path: plan-output/
@@ -232,14 +232,14 @@ jobs:
       # ── Upload SARIF to GitHub Code Scanning ──────────────────────────────
       - name: Upload Trivy SARIF
         if: always()
-        uses: github/codeql-action/upload-sarif@28deaeda66b76a05916b6923827895f2b14ab387  # v3.28.16
+        uses: github/codeql-action/upload-sarif@7211b7c8077ea37d8641b6271f6a365a22a5fbfa  # v4.36.0
         with:
           sarif_file: trivy-${{ matrix.env }}.sarif
           category: trivy-${{ matrix.env }}
 
       - name: Upload Checkov SARIF
         if: always()
-        uses: github/codeql-action/upload-sarif@28deaeda66b76a05916b6923827895f2b14ab387  # v3.28.16
+        uses: github/codeql-action/upload-sarif@7211b7c8077ea37d8641b6271f6a365a22a5fbfa  # v4.36.0
         with:
           sarif_file: checkov-${{ matrix.env }}.sarif
           category: checkov-${{ matrix.env }}
@@ -247,7 +247,7 @@ jobs:
       # ── Upload scan summary artifact ───────────────────────────────────────
       - name: Upload scan summary artifact
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
           name: scan-summary-${{ matrix.env }}
           path: |
@@ -271,7 +271,7 @@ jobs:
           api-key: ${{ secrets.INFRACOST_API_KEY }}
 
       - name: Download plan artifact
-        uses: actions/download-artifact@95815c38cf2ff2164869cbab79da8d1f422bc89e  # v4.2.1
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
         with:
           name: tfplan-${{ matrix.env }}
           path: plan-output/
@@ -285,7 +285,7 @@ jobs:
 
       - name: Upload Infracost artifact
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
           name: infracost-${{ matrix.env }}
           path: infracost-${{ matrix.env }}.json
@@ -301,21 +301,21 @@ jobs:
       pull-requests: write
     steps:
       - name: Download plan artifacts
-        uses: actions/download-artifact@95815c38cf2ff2164869cbab79da8d1f422bc89e  # v4.2.1
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
         continue-on-error: true
         with:
           pattern: tfplan-*
           path: artifacts/
 
       - name: Download scan summary artifacts
-        uses: actions/download-artifact@95815c38cf2ff2164869cbab79da8d1f422bc89e  # v4.2.1
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
         continue-on-error: true
         with:
           pattern: scan-summary-*
           path: artifacts/
 
       - name: Download Infracost artifacts
-        uses: actions/download-artifact@95815c38cf2ff2164869cbab79da8d1f422bc89e  # v4.2.1
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
         continue-on-error: true
         with:
           pattern: infracost-*
@@ -401,14 +401,14 @@ jobs:
 
       - name: Find existing comment
         id: find-comment
-        uses: peter-evans/find-comment@3eae4d37986fb5a8592848f6a574fdf654e61f9e  # v3.1.0
+        uses: peter-evans/find-comment@b30e6a3c0ed37e7c023ccd3f1db5c6c0b0c23aad  # v4.0.0
         with:
           issue-number: ${{ github.event.pull_request.number }}
           comment-author: github-actions[bot]
           body-includes: "<!-- mrhs-tf-report -->"
 
       - name: Create or update comment
-        uses: peter-evans/create-or-update-comment@71345be0265236311c031f5c7866368bd1eff043  # v4.0.0
+        uses: peter-evans/create-or-update-comment@e8674b075228eee787fea43ef493e45ece1004c9  # v5.0.0
         with:
           comment-id: ${{ steps.find-comment.outputs.comment-id }}
           issue-number: ${{ github.event.pull_request.number }}
@@ -423,7 +423,7 @@ jobs:
       contents: read
       pull-requests: write
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 2
