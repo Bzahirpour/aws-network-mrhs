@@ -14,6 +14,10 @@ locals {
   spoke1_private_cidrs = ["10.0.32.0/24"] # private-a (1a)
   spoke1_tgw_cidrs     = ["10.0.42.0/28"] # tgw-a (1a)
 
+  spoke2_cidr          = "10.0.48.0/20"
+  spoke2_private_cidrs = ["10.0.48.0/24"] # private-a (1a)
+  spoke2_tgw_cidrs     = ["10.0.58.0/28"] # tgw-a (1a)
+
   common_tags = {
     Project     = "multi-region-hub-spoke"
     Environment = local.env

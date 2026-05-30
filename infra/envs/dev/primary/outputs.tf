@@ -18,6 +18,11 @@ output "spoke1_vpc_id" {
   value       = module.spoke1_vpc.vpc_id
 }
 
+output "spoke2_vpc_id" {
+  description = "Spoke-2 VPC ID"
+  value       = module.spoke2_vpc.vpc_id
+}
+
 output "egress_attachment_id" {
   description = "Egress TGW attachment ID"
   value       = module.egress_attachment.attachment_id
@@ -26,4 +31,9 @@ output "egress_attachment_id" {
 output "spoke1_attachment_id" {
   description = "Spoke-1 TGW attachment ID"
   value       = module.spoke1_attachment.attachment_id
+}
+
+output "spoke2_attachment_id" {
+  description = "Spoke-2 TGW attachment ID"
+  value       = module.spoke2_attachment.attachment_id
 }

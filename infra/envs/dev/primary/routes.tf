@@ -19,6 +19,15 @@ resource "aws_route" "spoke1_private_to_tgw" {
   depends_on             = [module.spoke1_attachment]
 }
 
+# Spoke-2 private subnets: 0.0.0.0/0 → TGW
+resource "aws_route" "spoke2_private_to_tgw" {
+  for_each               = module.spoke2_vpc.private_route_table_ids
+  route_table_id         = each.value
+  destination_cidr_block = "0.0.0.0/0"
+  transit_gateway_id     = module.tgw.tgw_id
+  depends_on             = [module.spoke2_attachment]
+}
+
 # ── Regional NAT GW return routes ────────────────────────────────────────────
 # One entry per spoke VPC so de-NATted return traffic reaches the right spoke.
 # Add a new aws_route block here for each spoke added in future phases.
@@ -26,6 +35,13 @@ resource "aws_route" "spoke1_private_to_tgw" {
 resource "aws_route" "egress_nat_to_spoke1" {
   route_table_id         = module.egress_vpc.nat_gateway_route_table_id
   destination_cidr_block = local.spoke1_cidr
+  transit_gateway_id     = module.tgw.tgw_id
+  depends_on             = [module.egress_attachment]
+}
+
+resource "aws_route" "egress_nat_to_spoke2" {
+  route_table_id         = module.egress_vpc.nat_gateway_route_table_id
+  destination_cidr_block = local.spoke2_cidr
   transit_gateway_id     = module.tgw.tgw_id
   depends_on             = [module.egress_attachment]
 }
