@@ -43,7 +43,22 @@ module "spoke1_vpc" {
   tags                 = local.common_tags
 }
 
+# ── Spoke-2 VPC ───────────────────────────────────────────────────────────────
+# Default route in private RT → TGW wired in routes.tf.
+
+module "spoke2_vpc" {
+  source               = "../../../modules/vpc"
+  name                 = "mrhs-${local.region_short}-spoke2"
+  cidr                 = local.spoke2_cidr
+  az_count             = 1
+  private_subnet_cidrs = local.spoke2_private_cidrs
+  tgw_subnet_cidrs     = local.spoke2_tgw_cidrs
+  tags                 = local.common_tags
+}
+
 # ── TGW Attachments ───────────────────────────────────────────────────────────
+# Spoke attachments associate to rt-spoke and propagate ONLY to rt-egress.
+# No propagation to rt-spoke is what enforces spoke-to-spoke isolation.
 
 module "egress_attachment" {
   source                        = "../../../modules/tgw-attachment"
@@ -62,6 +77,17 @@ module "spoke1_attachment" {
   transit_gateway_id            = module.tgw.tgw_id
   vpc_id                        = module.spoke1_vpc.vpc_id
   subnet_ids                    = module.spoke1_vpc.tgw_subnet_ids
+  associate_with_route_table_id = module.tgw.route_table_ids["spoke"]
+  propagate_to_route_table_ids  = { egress = module.tgw.route_table_ids["egress"] }
+  tags                          = local.common_tags
+}
+
+module "spoke2_attachment" {
+  source                        = "../../../modules/tgw-attachment"
+  name                          = "mrhs-${local.region_short}-spoke2-attach"
+  transit_gateway_id            = module.tgw.tgw_id
+  vpc_id                        = module.spoke2_vpc.vpc_id
+  subnet_ids                    = module.spoke2_vpc.tgw_subnet_ids
   associate_with_route_table_id = module.tgw.route_table_ids["spoke"]
   propagate_to_route_table_ids  = { egress = module.tgw.route_table_ids["egress"] }
   tags                          = local.common_tags
